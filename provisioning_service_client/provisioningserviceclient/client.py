@@ -2,9 +2,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from .utils import sastoken
-from .serviceswagger import DeviceProvisioningServiceServiceRuntimeClient
-from .serviceswagger import models as genmodels
+from .utils import sastoken, auth
+from .protocol import ProvisioningServiceClient as GeneratedProvisioningServiceClient
+from .protocol import models as genmodels
 from . import models
 
 
@@ -56,9 +56,9 @@ def _wrap_internal_model(model):
     Wrap an internal provisioning service model
 
     :param model: Provisining service model to be wrapped
-    :type model: :class:`IndividualEnrollment<serviceswagger.models.IndividualEnrollment>`
-     or :class:`EnrollmentGroup<serviceswagger.models.EnrollmentGroup>`
-     or :class:`DeviceRegistrationState<serviceswagger.models.DeviceRegistrationState>`
+    :type model: :class:`IndividualEnrollment<protocol.models.IndividualEnrollment>`
+     or :class:`EnrollmentGroup<protocol.models.EnrollmentGroup>`
+     or :class:`DeviceRegistrationState<protocol.models.DeviceRegistrationState>`
     :returns: Wrapped model of corresponding class
     :rtype: :class:`IndividualEnrollment<provisioningserviceclient.models.IndividualEnrollment>`
      or :class:`EnrollmentGroup<provisioningserviceclient.models.EnrollmentGroup>`
@@ -144,15 +144,19 @@ class ProvisioningServiceClient(object):
     err_msg_unexpected = "Unexpected response {} from the Provisioning Service"
 
     def __init__(self, host_name, shared_access_key_name, shared_access_key):
-        https_prefix = "https://"
-
         self.host_name = host_name
         self.shared_access_key_name = shared_access_key_name
         self.shared_access_key = shared_access_key
-        self._runtime_client = DeviceProvisioningServiceServiceRuntimeClient(
-            https_prefix + self.host_name)
-        self._sastoken_factory = sastoken.SasTokenFactory(
+
+        #Build connection string
+
+        cs_auth = auth.ConnectionStringAuthentication.create_with_parsed_values(
             self.host_name, self.shared_access_key_name, self.shared_access_key)
+        self._runtime_client = GeneratedProvisioningServiceClient(cs_auth,
+            "https://" + self.host_name)
+
+        # self._sastoken_factory = sastoken.SasTokenFactory(
+        #     self.host_name, self.shared_access_key_name, self.shared_access_key)
 
     @classmethod
     def create_from_connection_string(cls, connection_string):

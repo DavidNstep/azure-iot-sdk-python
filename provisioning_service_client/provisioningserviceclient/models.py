@@ -2,15 +2,15 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from .serviceswagger import models as genmodels
+from .protocol import models as genmodels
 
 
-class IndividualEnrollment(object):
+class IndividualEnrollment(genmodels.IndividualEnrollment):
     """
     Individual Enrollment model. To instantiate please use the "create" class method
 
     :param internal_model: Internal model of an Individual Enrollment
-    :type internal_model: :class:`IndividualEnrollment<serviceswagger.models.IndividualEnrollment>`
+    :type internal_model: :class:`IndividualEnrollment<protocol.models.IndividualEnrollment>`
     :ivar capabilities: Capabilities of device
     :ivar registration_id: Registration ID.
     :ivar device_id: Desired IoT Hub device ID
@@ -24,28 +24,9 @@ class IndividualEnrollment(object):
     :ivar last_updated_date_time_utc: The DateTime this resource was last updated.
     """
 
-    def __init__(self, internal_model):
-        self._internal = internal_model
-        self._att_wrapper = AttestationMechanism(self._internal.attestation)
-
-        if self._internal.registration_state is not None:
-            self._drs_wrapper = DeviceRegistrationState(self._internal.registration_state)
-        else:
-            self._drs_wrapper = None
-
-        if self._internal.initial_twin is not None:
-            self._twin_wrapper = InitialTwin(self._internal.initial_twin)
-        else:
-            self._twin_wrapper = None
-
-        if self._internal.capabilities is not None:
-            self._capabilities_wrapper = DeviceCapabilities(self._internal.capabilities)
-        else:
-            self._capabilities_wrapper = None
-
     @classmethod
     def create(cls, registration_id, attestation, device_id=None, iot_hub_host_name=None,\
-        initial_twin=None, provisioning_status=None, device_capabilities=None):
+        initial_twin=None, provisioning_status="enabled", device_capabilities=None):
         """
         Create a new Individual Enrollment instance
 
@@ -66,115 +47,16 @@ class IndividualEnrollment(object):
          <provisioningserviceclient.models.IndividualEnrollment>`
         :rtype: :class:`IndividualEnrollment<provisioningserviceclient.models.IndividualEnrollment>`
         """
-        att_internal = attestation._internal
-
-        if initial_twin is not None:
-            twin_internal = initial_twin._internal
-        else:
-            twin_internal = None
-
-        if device_capabilities is not None:
-            cap_internal = device_capabilities._internal
-        else:
-            cap_internal = None
-
-        internal = genmodels.IndividualEnrollment(registration_id, att_internal, \
-            capabilities=cap_internal,  device_id=device_id, iot_hub_host_name=iot_hub_host_name, \
-            initial_twin=twin_internal, provisioning_status=provisioning_status)
-
-        new = cls(internal)
-        new._att_wrapper = attestation
-        new._twin_wrapper = initial_twin
-        new._drs_wrapper = None
-        new._capabilities_wrapper = device_capabilities
-        return new
-
-    @property
-    def capabilities(self):
-        return self._capabilities_wrapper
-
-    @capabilities.setter
-    def capabilities(self, value):
-        self._internal.capabilities = value._internal
-        self._capabilities_wrapper = value
-
-    @property
-    def registration_id(self):
-        return self._internal.registration_id
-
-    @registration_id.setter
-    def registration_id(self, value):
-        self._internal.registration_id = value
-
-    @property
-    def device_id(self):
-        return self._internal.device_id
-
-    @device_id.setter
-    def device_id(self, value):
-        self._internal.device_id = value
-
-    @property
-    def registration_state(self):
-        return self._drs_wrapper
-
-    @property
-    def attestation(self):
-        return self._att_wrapper
-
-    @attestation.setter
-    def attestation(self, value):
-        self._internal.attestation = value._internal
-        self._att_wrapper = value
-
-    @property
-    def iot_hub_host_name(self):
-        return self._internal.iot_hub_host_name
-
-    @iot_hub_host_name.setter
-    def iot_hub_host_name(self, value):
-        self._internal.iot_hub_host_name = value
-
-    @property
-    def initial_twin(self):
-        return self._twin_wrapper
-
-    @initial_twin.setter
-    def initial_twin(self, value):
-        self._internal.initial_twin = value._internal
-        self._twin_wrapper = value
-
-    @property
-    def etag(self):
-        return self._internal.etag
-
-    @etag.setter
-    def etag(self, value):
-        self._internal.etag = value
-
-    @property
-    def provisioning_status(self):
-        return self._internal.provisioning_status
-
-    @provisioning_status.setter
-    def provisioning_status(self, value):
-        self._internal.provisioning_status = value
-
-    @property
-    def created_date_time_utc(self):
-        return self._internal.created_date_time_utc
-
-    @property
-    def last_updated_date_time_utc(self):
-        return self._internal.last_updated_date_time_utc
-
+        return cls(registration_id=registration_id, attestation=attestation, device_id=device_id,
+            iot_hub_host_name=iot_hub_host_name, initial_twin=initial_twin, provisioning_status=provisioning_status,
+            capabilities=device_capabilities)
 
 class EnrollmentGroup(object):
     """
     Enrollment Group model. To instantiate please use the "create" class method
 
     :param internal_model: Internal model of an Enrollment Group
-    :type internal_model: :class:`EnrollmentGroup<serviceswagger.models.EnrollmentGroup>`
+    :type internal_model: :class:`EnrollmentGroup<protocol.models.EnrollmentGroup>`
     :ivar enrollment_group_id: Enrollment Group ID.
     :ivar attestation: Attestation method used by the device.
     :ivar iot_hub_host_name: The Iot Hub host name.
@@ -324,7 +206,7 @@ class DeviceRegistrationState(object):
 
     :param internal_model: Internal model of a Device Registration State
     :type internal_model: :class:`DeviceRegistrationState
-     <serviceswagger.models.DeviceRegistrationState>`
+     <protocol.models.DeviceRegistrationState>`
     :ivar registration_id: Registration ID.
     :ivar created_date_time_utc: Registration create date time (in UTC).
     :ivar assigned_hub: Assigned Azure IoT Hub.

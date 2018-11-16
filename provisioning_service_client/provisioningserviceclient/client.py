@@ -5,7 +5,8 @@
 from .utils import sastoken, auth
 from .protocol import ProvisioningServiceClient as GeneratedProvisioningServiceClient
 from .protocol.models import (BulkEnrollmentOperation, BulkEnrollmentOperationResult, \
-    BulkEnrollmentOperationError, QuerySpecification)
+    BulkEnrollmentOperationError, QuerySpecification, IndividualEnrollment, EnrollmentGroup, \
+    DeviceRegistrationState)
 #from .protocol import models as genmodels
 #from . import models
 
@@ -119,6 +120,14 @@ def _is_successful(status_code):
 #     """
 #     pass
 
+def _unwrap_twin(model):
+    if model.initial_twin:
+        model.initial_twin = model.initial_twin._unwrap()
+
+def _wrap_twin(model):
+    if model.initial_twin:
+        model.initial_twin = model.initial_twin._wrap()
+
 
 class ProvisioningServiceError(Exception):
     """
@@ -206,14 +215,16 @@ class ProvisioningServiceClient(object):
          <provisioningserviceclient.ProvisioningServiceError>` if an error occurs on the
          Provisioning Service
         """
-        if isinstance(provisioning_model, models.IndividualEnrollment):
+        if isinstance(provisioning_model, IndividualEnrollment):
             operation = self._runtime_client.create_or_update_individual_enrollment
             id = provisioning_model.registration_id
-        elif isinstance(provisioning_model, models.EnrollmentGroup):
+        elif isinstance(provisioning_model, EnrollmentGroup):
             operation = self._runtime_client.create_or_update_enrollment_group
             id = provisioning_model.enrollment_group_id
         else:
             raise TypeError("given object must be IndividualEnrollment or EnrollmentGroup")
+
+        _unwrap_twin(provisioning_model)
 
         try:
             raw_resp = operation(id, provisioning_model, provisioning_model.etag, raw=True)
@@ -223,6 +234,8 @@ class ProvisioningServiceClient(object):
 
         if not _is_successful(raw_resp.response.status_code):
             raise ProvisioningServiceError(raw_resp.response.reason)
+
+        _wrap_twin(raw_resp.output)
 
         return raw_resp.output
 
@@ -248,6 +261,7 @@ class ProvisioningServiceClient(object):
         if not _is_successful(raw_resp.response.status_code):
             raise ProvisioningServiceError(raw_resp.response.reason)
 
+        _wrap_twin(raw_resp.output)
         return raw_resp.output
 
     def get_enrollment_group(self, group_id):
@@ -272,6 +286,7 @@ class ProvisioningServiceClient(object):
         if not _is_successful(raw_resp.response.status_code):
             raise ProvisioningServiceError(raw_resp.response.reason)
 
+        _wrap_twin(raw_resp.output)
         return raw_resp.output
 
     def get_registration_state(self, registration_id):
@@ -312,13 +327,13 @@ class ProvisioningServiceClient(object):
          <provisioningserviceclient.ProvisioningServiceError>` if an error occurs on the
          Provisioning Service
         """
-        if isinstance(provisioning_model, models.IndividualEnrollment):
+        if isinstance(provisioning_model, IndividualEnrollment):
             self.delete_individual_enrollment_by_param(provisioning_model.registration_id, \
                 provisioning_model.etag)
-        elif isinstance(provisioning_model, models.EnrollmentGroup):
+        elif isinstance(provisioning_model, EnrollmentGroup):
             self.delete_enrollment_group_by_param(provisioning_model.enrollment_group_id, \
                 provisioning_model.etag)
-        elif isinstance(provisioning_model, models.DeviceRegistrationState):
+        elif isinstance(provisioning_model, DeviceRegistrationState):
             self.delete_registration_state_by_param(provisioning_model.registration_id, \
             provisioning_model.etag)
         else:

@@ -6,13 +6,14 @@
 # from .protocol import DeviceRegistrationState, ReprovisionPolicy, CustomAllocationDefinition
 
 from .protocol.models import *
+from .protocol.models import InitialTwin as GeneratedInitialTwin
 
 def _patch_models():
     _patch_individual_enrollment()
     _patch_enrollment_group()
     _patch_attestation_mechanism()
     _patch_device_capabilities()
-    _patch_initial_twin
+    _patch_initial_twin()
 
 def _patch_individual_enrollment():
     """Add convenience/back-compat methods to IndividualEnrollment
@@ -58,7 +59,7 @@ def _patch_individual_enrollment():
             capabilities=device_capabilities, reprovision_policy=reprovision_policy, allocation_policy=allocation_policy,
             iot_hubs=iot_hubs, custom_allocation_definition=custom_allocation_definition)
     
-    setattr(IndividualEnrollment, "create", classmethod("create"))
+    setattr(IndividualEnrollment, "create", classmethod(create))
 
 def _patch_enrollment_group():
     """Add conveneince/back-compat methods to EnrollmentGroup
@@ -100,14 +101,13 @@ def _patch_enrollment_group():
             allocation_policy=allocation_policy, iot_hubs=iot_hubs, 
             custom_allocation_definition=custom_allocation_definition)
 
-    setattr(EnrollmentGroup, "create", classmethod("create"))
+    setattr(EnrollmentGroup, "create", classmethod(create))
 
 
 def _patch_device_capabilities():
     """Add convenience/back-compat methods to DeviceCapabilities
     """
 
-    @classmethod
     def create(cls, iot_edge=False):
         """
         Create a new Device Capabilities instance.
@@ -119,7 +119,7 @@ def _patch_device_capabilities():
         """
         return cls(iot_edge=iot_edge)
 
-    setattr(DeviceCapabilities, "create", classmethod("create"))
+    setattr(DeviceCapabilities, "create", classmethod(create))
 
 
 def _patch_attestation_mechanism():
@@ -136,7 +136,7 @@ def _patch_attestation_mechanism():
          <provisioningserviceclient.models.AttestationMechanism>`
         :rtype: :class:`AttestationMechnaism<provisioningserviceclient.models.AttestationMechanism>`
         """
-        tpm = TpmAttestation(endorsement_key, storage_root_key)
+        tpm = TpmAttestation(endorsement_key=endorsement_key, storage_root_key=storage_root_key)
         return cls(type="tpm", tpm=tpm)
 
     def create_with_x509_client_certs(cls, cert1, cert2=None):
@@ -149,11 +149,11 @@ def _patch_attestation_mechanism():
          <provisioningserviceclient.models.AttestationMechanism>`
         :rtype: :class:`AttestationMechnaism<provisioningserviceclient.models.AttestationMechanism>`
         """
-        primary = X509CertificateWithInfo(cert1)
+        primary = X509CertificateWithInfo(certificate=cert1)
         secondary = None
         if cert2:
-            secondary = X509CertificateWithInfo(cert2)
-        certs = X509Certificates(primary, secondary)
+            secondary = X509CertificateWithInfo(certificate=cert2)
+        certs = X509Certificates(primary=primary, secondary=secondary)
         x509 = X509Attestation(client_certificates=certs)
         return cls(type="x509", x509=x509)
 
@@ -167,11 +167,11 @@ def _patch_attestation_mechanism():
          <provisioningserviceclient.models.AttestationMechanism>`
         :rtype: :class:`AttestationMechnaism<provisioningserviceclient.models.AttestationMechanism>`
         """
-        primary = X509CertificateWithInfo(cert1)
+        primary = X509CertificateWithInfo(certificate=cert1)
         secondary = None
         if cert2:
-            secondary = X509CertificateWithInfo(cert2)
-        certs = X509Certificates(primary, secondary)
+            secondary = X509CertificateWithInfo(certificate=cert2)
+        certs = X509Certificates(primary=primary, secondary=secondary)
         x509 = X509Attestation(signing_certificates=certs)
         return cls(type="x509", x509=x509)
 
@@ -185,7 +185,7 @@ def _patch_attestation_mechanism():
          <provisioningserviceclient.models.AttestationMechanism>`
         :rtype: :class:`AttestationMechnaism<provisioningserviceclient.models.AttestationMechanism>`
         """
-        ca_refs = X509CAReferences(ref1, ref2)
+        ca_refs = X509CAReferences(primary=ref1, secondary=ref2)
         x509 = X509Attestation(ca_references=ca_refs)
         return cls(type="x509", x509=x509)
 
@@ -210,11 +210,23 @@ def _patch_attestation_mechanism():
     )
     setattr(AttestationMechanism, "attestation_type", property(attestation_type))
 
-
-def _patch_initial_twin():
-    """Add convenience/back-compat methods for InitialTwin
+class InitialTwin(object):
+    """
+    Initial Twin model.
+    :param dict tags: The tags for the Initial Twin
+    :param dict desired_properties: The desired properties for the Initial Twin
+    :ivar tags: Initial Twin tags
+    :ivar desired_properties: Desired properties of the Initial Twin
     """
 
+    def __init__(self, tags=None, desired_properties=None):
+        tags_tc = TwinCollection(additional_properties=tags)
+        desired_properties_tc = TwinCollection(additional_properties=desired_properties)
+        properties = InitialTwinProperties(desired=desired_properties_tc)
+        twin = GeneratedInitialTwin(tags=tags_tc, properties=properties)
+        self._create_internal(twin)
+
+    @classmethod
     def create(cls, tags=None, desired_properties=None):
         """
         Create an Initial Twin
@@ -224,23 +236,79 @@ def _patch_initial_twin():
         :returns: New instance of :class:`InitialTwin<provisioningserviceclient.models.InitialTwin>`
         :rtype: :class:`InitialTwin<provisioningserviceclient.models.InitialTwin>`
         """
-        tags_tc = TwinCollection(tags)
-        desired_properties_tc = TwinCollection(desired_properties)
-        properties = InitialTwinProperties(desired_properties_tc)
-        return cls(tags=tags, properties=properties)
+        return cls(tags=tags, desired_properties=desired_properties)
 
-    def tags_set(self):
-        return self.tags.additional_properties
+    def _create_internal(self, internal_model):
+        self._internal = internal_model
+        self._internal._wrapper = self
 
-    def tags_get(self, value):
-        self.tags.additional_properties = value
+    @property
+    def tags(self):
+        return self._internal.tags.additional_properties
 
-    def desired_properties_get(self):
-        return self.properties.desired.additional_properties
+    @tags.setter
+    def tags(self, value):
+        self._internal.tags.additional_properties = value
 
-    def desired_properties_set(self, value):
-        self.properties.desired.additional_properties = value
+    @property
+    def desired_properties(self):
+        return self._internal.properties.desired.additional_properties
 
-    setattr(InitialTwin, "create", classmethod(create))
-    setattr(InitialTwin, "tags", property(tags_set, tags_get))
-    setattr(InitialTwin, "desired_properties", property(desired_properties_get, desired_properties_set))
+    @desired_properties.setter
+    def desired_properties(self, value):
+        self._internal.properties.desired.additional_properties = value
+
+    def _unwrap(self):
+        return self._internal
+
+def _patch_initial_twin():
+    """Add convenience/back-compat methods for InitialTwin
+    """
+
+    def _wrap(self):
+        """Keep a pointer to a wrapper class
+        """
+        if hasattr(self, "_wrapper"):   #Not EAFP, but this case is common enough to use LBYL
+            wrapper = self._wrapper
+        else:
+            wrapper = InitialTwin._create_internal(self)
+            self._wrapper = wrapper
+        return wrapper
+
+    setattr(GeneratedInitialTwin, "_wrap", _wrap)
+
+
+# def _patch_initial_twin():
+#     """Add convenience/back-compat methods for InitialTwin
+#     """
+
+#     def create(cls, tags=None, desired_properties=None):
+#         """
+#         Create an Initial Twin
+
+#         :param dict tags: The tags for the Initial Twin
+#         :param dict desired_properties: The desired properties for the Initial Twin
+#         :returns: New instance of :class:`InitialTwin<provisioningserviceclient.models.InitialTwin>`
+#         :rtype: :class:`InitialTwin<provisioningserviceclient.models.InitialTwin>`
+#         """
+#         tags_tc = TwinCollection(additional_properties=tags)
+#         desired_properties_tc = TwinCollection(additional_properties=desired_properties)
+#         properties = InitialTwinProperties(desired=desired_properties_tc)
+#         return cls(tags=tags, properties=properties)
+
+#     def tags_get(self):
+#         return self.tags.additional_properties
+
+#     def tags_set(self, value):
+#         setattr(self, "tags")
+#         self.tags.additional_properties = value
+
+#     def desired_properties_get(self):
+#         return self.properties.desired.additional_properties
+
+#     def desired_properties_set(self, value):
+#         self.properties.desired.additional_properties = value
+
+#     setattr(InitialTwin, "create", classmethod(create))
+#     setattr(InitialTwin, "tags", property(tags_get, tags_set))
+#     setattr(InitialTwin, "desired_properties", property(desired_properties_get, desired_properties_set))

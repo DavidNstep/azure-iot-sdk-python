@@ -30,7 +30,7 @@ class ConnectionStringAuthentication(ConnectionString, Authentication):
         connection_string = HOST_NAME + "=" + host_name + ";" + \
             SHARED_ACCESS_KEY_NAME + "=" + shared_access_key_name + ";" + \
             SHARED_ACCESS_KEY + "=" + shared_access_key
-        cls(connection_string)
+        return cls(connection_string)
 
     def signed_session(self, session=None):
         """Create requests session with any required auth headers applied.
